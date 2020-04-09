@@ -80,7 +80,7 @@ def run():
 			embed = discord.Embed(description = description
 			, colour = discord.Colour.gold())
 			msg = await ctx.send(embed=embed)
-			await asyncio.sleep(10)
+			await asyncio.sleep(60)
 			await msg.delete()
 
 		#Verifies the voice situations of the author/bot
@@ -181,9 +181,9 @@ def run():
 			await asyncio.sleep(p_duration)
 
 			if len(obj.queues) != 0 and not voice.is_playing():
-				search = obj.queues[0]
+				upcoming = obj.queues[0]['webpage_url']
 				await obj.to_remove()
-				await self.play_music(ctx, search)
+				await self.play_music(ctx, upcoming)
 
 
 		#Join the author's voice channel
@@ -327,12 +327,13 @@ def run():
 			#Plays the next song
 			else:
 				ctx.voice_client.stop()
-				search = obj.queues[0]
-				obj.queues.pop(0)
-				await self.play_music(ctx, search)
-		
-		#Leaves the voice channel
-		async def actual_leaves(self, ctx):			
+				upcoming = obj.queues[0]['webpage_url']
+				await obj.to_remove()
+				await self.play_music(ctx, upcoming)
+
+		#Calls the leave function
+		@commands.command()
+		async def stop(self, ctx):
 			obj = get_object(ctx)
 			await obj.to_clear()
 
@@ -349,13 +350,20 @@ def run():
 
 		#Calls the leave function
 		@commands.command()
-		async def stop(self, ctx):
-			self.actual_leaves(ctx)
-
-		#Calls the leave function
-		@commands.command()
 		async def leave(self, ctx):
-			self.actual_leaves(ctx)
+			obj = get_object(ctx)
+			await obj.to_clear()
+
+			channel = ctx.message.author.voice.channel
+			voice = get(bot.voice_clients, guild=ctx.guild)
+			
+			if voice and voice.is_connected():
+				print(f'Disconnected from {channel}', end = '')
+				functions.log_ctx(ctx)
+				await voice.disconnect()
+			else:
+				text = f'I was not at the {channel}.'
+				await self.send_embed(ctx, text)
 
 		#Prints all the commands/Help
 		@commands.command()
